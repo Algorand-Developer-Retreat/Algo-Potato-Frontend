@@ -96,6 +96,8 @@ export default function GameDashboard() {
     if (index !== -1) {
       setSelectedGamebookIndex(index);
       setSelectedGamebookId(gamebooks[index].id);
+      getGameBookState(gamebooks[index].id);
+      getOpenGames(gamebooks[index].id);
     }
 
     console.log(selectedGamebookId);
