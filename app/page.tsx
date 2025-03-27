@@ -60,10 +60,22 @@ export default function GameDashboard() {
     setWagerAmount(value);
   };
 
+  // Initial data fetch
   useEffect(() => {
     getOpenGames(selectedGamebookId);
     getGameBookState(selectedGamebookId);
   }, []);
+
+  // Update data when selected gamebook changes
+  useEffect(() => {
+    if (
+      selectedGamebookId === defaultGamebookID ||
+      selectedGamebookId === secondaryGamebookID
+    ) {
+      getOpenGames(selectedGamebookId);
+      getGameBookState(selectedGamebookId);
+    }
+  }, [selectedGamebookId]);
 
   // Format win percentage to two decimal places
   const formatWinPercentage = () => {
@@ -96,11 +108,7 @@ export default function GameDashboard() {
     if (index !== -1) {
       setSelectedGamebookIndex(index);
       setSelectedGamebookId(gamebooks[index].id);
-      getGameBookState(gamebooks[index].id);
-      getOpenGames(gamebooks[index].id);
     }
-
-    console.log(selectedGamebookId);
   };
 
   return (
