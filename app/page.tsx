@@ -1,21 +1,45 @@
 'use client';
 
-// import Link from "next/link";
 import { Button } from './components/ui/button';
 import useGameMethods from '@/hooks/useGameMethods';
 import { useEffect, useState } from 'react';
 import { Input } from './components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
-
-// import { useState, useEffect } from "react";
-// import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
-// import { Button } from "./ui/button";
-// import { Input } from "./ui/input";
-import { ArrowRight, RefreshCw, Trophy, Coins, ListIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  RefreshCw,
+  Trophy,
+  Coins,
+  ListIcon,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './components/ui/select';
 
 export default function GameDashboard() {
   const [wagerAmount, setWagerAmount] = useState<string>('');
+  const defaultGamebookID = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
+  const secondaryGamebookID = BigInt(process.env.NEXT_PUBLIC_FUNK_APP_ID!);
+
+  // Define available gamebooks
+  const gamebooks = [
+    { id: defaultGamebookID, name: 'Classic Toss' },
+    { id: secondaryGamebookID, name: 'Funk Edition' },
+  ];
+
+  // State for the currently selected gamebook
+  const [selectedGamebookIndex, setSelectedGamebookIndex] = useState<number>(0);
+  const [selectedGamebookId, setSelectedGamebookId] = useState<bigint>(
+    gamebooks[0].id
+  );
+
   const {
     registerGame,
     getOpenGames,
@@ -24,6 +48,7 @@ export default function GameDashboard() {
     getGameBookState,
     gameBookState,
   } = useGameMethods();
+
   const isValidWager =
     wagerAmount !== '' &&
     !isNaN(Number(wagerAmount)) &&
@@ -36,8 +61,8 @@ export default function GameDashboard() {
   };
 
   useEffect(() => {
-    getOpenGames();
-    getGameBookState();
+    getOpenGames(selectedGamebookId);
+    getGameBookState(selectedGamebookId);
   }, []);
 
   // Format win percentage to two decimal places
@@ -46,6 +71,34 @@ export default function GameDashboard() {
     const totalGames = gameBookState.ownerWins + gameBookState.playerWins;
     if (totalGames === 0) return '0%';
     return ((gameBookState.ownerWins / totalGames) * 100).toFixed(2) + '%';
+  };
+
+  // Handle gamebook navigation
+  const navigateGamebook = (direction: 'next' | 'prev') => {
+    let newIndex = selectedGamebookIndex;
+
+    if (direction === 'next') {
+      newIndex = (selectedGamebookIndex + 1) % gamebooks.length;
+    } else {
+      newIndex =
+        selectedGamebookIndex === 0
+          ? gamebooks.length - 1
+          : selectedGamebookIndex - 1;
+    }
+
+    setSelectedGamebookIndex(newIndex);
+    setSelectedGamebookId(gamebooks[newIndex].id);
+  };
+
+  // Handle direct gamebook selection
+  const handleGamebookSelection = (gamebookId: string) => {
+    const index = gamebooks.findIndex((gb) => gb.id.toString() === gamebookId);
+    if (index !== -1) {
+      setSelectedGamebookIndex(index);
+      setSelectedGamebookId(gamebooks[index].id);
+    }
+
+    console.log(selectedGamebookId);
   };
 
   return (
@@ -57,11 +110,55 @@ export default function GameDashboard() {
             <h1 className='text-2xl font-bold'>Game Dashboard</h1>
             <Button
               variant='outline'
-              onClick={() => getGameBookState()}
+              onClick={() => getGameBookState(selectedGamebookId)}
               className='bg-transparent border border-white hover:bg-white hover:text-indigo-600'
             >
               <RefreshCw className='w-4 h-4 mr-2' /> Refresh Stats
             </Button>
+          </div>
+
+          {/* Gamebook Selector */}
+          <div className='mb-4'>
+            <div className='flex items-center justify-between bg-indigo-700 rounded-lg p-2'>
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={() => navigateGamebook('prev')}
+                className='text-white hover:bg-indigo-600'
+              >
+                <ChevronLeft className='w-5 h-5' />
+              </Button>
+
+              <Select
+                value={selectedGamebookId.toString()}
+                onValueChange={handleGamebookSelection}
+              >
+                <SelectTrigger className='flex-1 mx-2 bg-indigo-700 border-indigo-500 text-white'>
+                  <SelectValue placeholder='Select Gamebook'>
+                    {gamebooks[selectedGamebookIndex].name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {gamebooks.map((book) => (
+                    <SelectItem
+                      key={book.id.toString()}
+                      value={book.id.toString()}
+                    >
+                      {book.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={() => navigateGamebook('next')}
+                className='text-white hover:bg-indigo-600'
+              >
+                <ChevronRight className='w-5 h-5' />
+              </Button>
+            </div>
           </div>
 
           {gameBookState && (
@@ -110,7 +207,7 @@ export default function GameDashboard() {
                 <CardHeader>
                   <CardTitle className='flex items-center text-xl'>
                     <Coins className='w-5 h-5 mr-2 text-indigo-600' />
-                    🤝 Toss It Up 🤝
+                    🤝 Toss It Up 🤝 - {gamebooks[selectedGamebookIndex].name}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-4'>
@@ -142,7 +239,9 @@ export default function GameDashboard() {
                   </div>
 
                   <Button
-                    onClick={() => registerGame(Number(wagerAmount))}
+                    onClick={() =>
+                      registerGame(Number(wagerAmount), selectedGamebookId)
+                    }
                     variant='default'
                     disabled={!isValidWager}
                     className='w-full bg-indigo-600 hover:bg-indigo-700 text-white'
@@ -158,10 +257,10 @@ export default function GameDashboard() {
               <div className='flex justify-between items-center mb-4'>
                 <h2 className='text-xl font-bold flex items-center'>
                   <ListIcon className='w-5 h-5 mr-2 text-indigo-600' />
-                  Available Games
+                  Available Games - {gamebooks[selectedGamebookIndex].name}
                 </h2>
                 <Button
-                  onClick={() => getOpenGames()}
+                  onClick={() => getOpenGames(selectedGamebookId)}
                   variant='outline'
                   size='sm'
                 >

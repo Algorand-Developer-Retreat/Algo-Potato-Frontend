@@ -1,14 +1,16 @@
-import { useWallet } from "@txnlab/use-wallet-react";
-import { TransactionSignerAccount } from "@algorandfoundation/algokit-utils/types/account";
-import algosdk from "algosdk";
-import { AlgoAmount } from "@algorandfoundation/algokit-utils/types/amount";
-import * as algokit from "@algorandfoundation/algokit-utils";
+import { useWallet } from '@txnlab/use-wallet-react';
+import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account';
+import algosdk from 'algosdk';
+import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount';
+import * as algokit from '@algorandfoundation/algokit-utils';
 
-import { GameMakerFactory } from "../../clients/GameMakerClient";
-import { TossUpFactory } from "../../clients/TossUpClient";
-import { algorandClient } from "@/lib/algoClient";
+import { GameMakerFactory } from '../../clients/GameMakerClient';
+import { TossUpFactory } from '../../clients/TossUpClient';
+import { algorandClient } from '@/lib/algoClient';
 
-import { useState } from "react";
+import { useState } from 'react';
+
+const defaultID = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
 
 type GameInfo = {
   id: bigint;
@@ -19,22 +21,25 @@ type GameInfo = {
 const useGameMethods = () => {
   const { transactionSigner, activeAddress } = useWallet();
   const [openGames, setOpenGames] = useState<GameInfo[]>([]);
-  const [gameBookState, setGameBookState] = useState<{ ownerWins: number; playerWins: number } | undefined>();
+  const [gameBookState, setGameBookState] = useState<
+    { ownerWins: number; playerWins: number } | undefined
+  >();
 
   const connectedWalletSignerAcc: TransactionSignerAccount = {
     addr: activeAddress!,
     signer: transactionSigner,
   };
 
-  const getGameClient = async () => {
+  const getGameClient = async (appId = defaultID) => {
     algokit.Config.configure({ populateAppCallResources: true });
 
-    const appId = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
-
-    const gameMakerFactory = algorandClient.client.getTypedAppFactory(GameMakerFactory, {
-      defaultSender: connectedWalletSignerAcc.addr,
-      defaultSigner: connectedWalletSignerAcc.signer,
-    });
+    const gameMakerFactory = algorandClient.client.getTypedAppFactory(
+      GameMakerFactory,
+      {
+        defaultSender: connectedWalletSignerAcc.addr,
+        defaultSigner: connectedWalletSignerAcc.signer,
+      }
+    );
 
     const gameClient = gameMakerFactory.getAppClientById({
       appId,
@@ -43,8 +48,8 @@ const useGameMethods = () => {
     return gameClient;
   };
 
-  const getGameBookState = async () => {
-    const gameBookClient = await getGameClient();
+  const getGameBookState = async (gameBookAppID = defaultID) => {
+    const gameBookClient = await getGameClient(gameBookAppID);
     const globalState = await gameBookClient.state.global.getAll();
 
     setGameBookState({
@@ -60,7 +65,8 @@ const useGameMethods = () => {
 
     // const appId = BigInt(736353239);
 
-    const tossUpFactory = algorandClient.client.getTypedAppFactory(TossUpFactory);
+    const tossUpFactory =
+      algorandClient.client.getTypedAppFactory(TossUpFactory);
 
     const gameClient = tossUpFactory.getAppClientById({
       appId,
@@ -71,9 +77,11 @@ const useGameMethods = () => {
     return { ...globalState, id: appId };
   };
 
-  const getOpenGames = async () => {
-    const gameClient = await getGameClient();
-    const createdApps = (await algorandClient.account.getInformation(gameClient.appAddress)).createdApps!;
+  const getOpenGames = async (gamebookAppID = defaultID) => {
+    const gameClient = await getGameClient(gamebookAppID);
+    const createdApps = (
+      await algorandClient.account.getInformation(gameClient.appAddress)
+    ).createdApps!;
     console.log(createdApps);
 
     const appsGlobalState = await Promise.all(
@@ -81,7 +89,9 @@ const useGameMethods = () => {
         const state = await getGameState(BigInt(app.id));
         return {
           ...state,
-          amount: state.amount ? AlgoAmount.MicroAlgos(state.amount) : undefined,
+          amount: state.amount
+            ? AlgoAmount.MicroAlgos(state.amount)
+            : undefined,
         };
       })
     );
@@ -93,14 +103,16 @@ const useGameMethods = () => {
     return appsGlobalState;
   };
 
-  const registerGame = async (amount: number) => {
-    const gameClient = await getGameClient();
-    const registerPayment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      from: connectedWalletSignerAcc.addr,
-      to: gameClient.appAddress,
-      amount: amount,
-      suggestedParams: await algorandClient.getSuggestedParams(),
-    });
+  const registerGame = async (amount: number, gamebookAppID = defaultID) => {
+    const gameClient = await getGameClient(gamebookAppID);
+    const registerPayment = algosdk.makePaymentTxnWithSuggestedParamsFromObject(
+      {
+        from: connectedWalletSignerAcc.addr,
+        to: gameClient.appAddress,
+        amount: amount,
+        suggestedParams: await algorandClient.getSuggestedParams(),
+      }
+    );
 
     const registerResponse = await gameClient.send.register({
       args: {
@@ -112,8 +124,12 @@ const useGameMethods = () => {
     console.log(registerResponse.return!);
   };
 
-  const playGame = async (amount: bigint, appId: bigint) => {
-    const gameClient = await getGameClient();
+  const playGame = async (
+    amount: bigint,
+    appId: bigint,
+    gameBookAppID = defaultID
+  ) => {
+    const gameClient = await getGameClient(gameBookAppID);
     const params = await algorandClient.getSuggestedParams();
 
     const playPayment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
