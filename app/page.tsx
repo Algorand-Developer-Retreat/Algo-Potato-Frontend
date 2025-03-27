@@ -25,13 +25,13 @@ import {
 
 export default function GameDashboard() {
   const [wagerAmount, setWagerAmount] = useState<string>('');
-  const defaultGamebookID = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
-  const secondaryGamebookID = BigInt(process.env.NEXT_PUBLIC_FUNK_APP_ID!);
+  const defaultGamebookID = BigInt(process.env.NEXT_PUBLIC_FUNK_APP_ID!);
+  const secondaryGamebookID = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
 
   // Define available gamebooks
   const gamebooks = [
-    { id: defaultGamebookID, name: 'Classic Toss' },
-    { id: secondaryGamebookID, name: 'Funk Edition' },
+    { id: defaultGamebookID, name: 'Funk Edition' },
+    { id: secondaryGamebookID, name: 'Classic Toss' },
   ];
 
   // State for the currently selected gamebook
