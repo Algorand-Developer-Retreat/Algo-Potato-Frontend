@@ -1,162 +1,280 @@
 import { useWallet } from '@txnlab/use-wallet-react';
 import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account';
-import algosdk from 'algosdk';
+import algosdk, { ABIType, encodeAddress } from 'algosdk';
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount';
 import * as algokit from '@algorandfoundation/algokit-utils';
-
-import { GameMakerFactory } from '../../clients/GameMakerClient';
-import { TossUpFactory } from '../../clients/TossUpClient';
-import { algorandClient } from '@/lib/algoClient';
-
 import { useState } from 'react';
 
-const defaultID = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
+import { algorandClient } from '@/lib/algoClient';
+import { AlgoPotatoFactory } from '../../clients/AlgoPotato';
 
-type GameInfo = {
-  id: bigint;
-  owner?: string;
-  amount?: AlgoAmount;
+export type OpenGameState = {
+  player_1: string;
+  player_2: string;
+  player_1Round: bigint;
+  player_2Round: bigint;
+  vrfRound: bigint;
+  asset: bigint;
+  assetAmount: bigint;
+  counter: bigint;
 };
 
 const useGameMethods = () => {
   const { transactionSigner, activeAddress } = useWallet();
-  const [openGames, setOpenGames] = useState<GameInfo[]>([]);
-  const [gameBookState, setGameBookState] = useState<
-    { ownerWins: number; playerWins: number } | undefined
-  >();
+  const [appId, setAppId] = useState<bigint | null>(null);
+  const [openGames, setOpenGames] = useState<OpenGameState[]>([]);
 
-  const connectedWalletSignerAcc: TransactionSignerAccount = {
-    addr: activeAddress!,
-    signer: transactionSigner,
+  const createAndFund = async () => {
+    const factory = new AlgoPotatoFactory({
+      algorand: algorandClient,
+      defaultSender: activeAddress!,
+      defaultSigner: transactionSigner,
+    });
+
+    const { appClient } = await factory.send.create.bare();
+
+    await algorandClient.send.payment({
+      sender: activeAddress!,
+      signer: transactionSigner,
+      receiver: appClient.appAddress,
+      amount: AlgoAmount.Algo(0.1),
+    });
+    setAppId(appClient.appId); // Store the appId for future reference
   };
 
-  const getGameClient = async (appId = defaultID) => {
+  const getAppClient = async () => {
     algokit.Config.configure({ populateAppCallResources: true });
 
-    const gameMakerFactory = algorandClient.client.getTypedAppFactory(
-      GameMakerFactory,
-      {
-        defaultSender: connectedWalletSignerAcc.addr,
-        defaultSigner: connectedWalletSignerAcc.signer,
-      }
-    );
+    const factory = new AlgoPotatoFactory({
+      algorand: algorandClient,
+      defaultSender: activeAddress!,
+      defaultSigner: transactionSigner,
+    });
+    const appId = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
 
-    const gameClient = gameMakerFactory.getAppClientById({
+    return factory.getAppClientById({
       appId,
     });
-
-    return gameClient;
   };
 
-  const getGameBookState = async (gameBookAppID = defaultID) => {
-    const gameBookClient = await getGameClient(gameBookAppID);
-    const globalState = await gameBookClient.state.global.getAll();
+  const createGame = async (amount: number) => {
+    const algoPotatoClient = await getAppClient();
+    const appAddress = algoPotatoClient.appAddress;
 
-    setGameBookState({
-      ownerWins: Number(globalState.ownerWins ?? 0),
-      playerWins: Number(globalState.playerWins ?? 0),
+    const assetDeposit = await algorandClient.createTransaction.payment({
+      sender: activeAddress!,
+      signer: transactionSigner,
+      receiver: appAddress,
+      amount: AlgoAmount.MicroAlgo(amount),
     });
 
-    return globalState;
-  };
-
-  const getGameState = async (appId: bigint) => {
-    algokit.Config.configure({ populateAppCallResources: true });
-
-    // const appId = BigInt(736353239);
-
-    const tossUpFactory =
-      algorandClient.client.getTypedAppFactory(TossUpFactory);
-
-    const gameClient = tossUpFactory.getAppClientById({
-      appId,
+    const mbrFee = algorandClient.createTransaction.payment({
+      sender: activeAddress!,
+      signer: transactionSigner,
+      receiver: appAddress,
+      amount: AlgoAmount.MicroAlgo(60_100),
     });
 
-    const globalState = await gameClient.state.global.getAll();
+    const txnResponse = await algoPotatoClient.send.createGame({
+      args: {
+        assetDeposit: assetDeposit,
+        mbrFee: mbrFee,
+      },
+    });
 
-    return { ...globalState, id: appId };
+    const txIds = txnResponse.txIds;
+    const abiResults = txnResponse.return;
+    // 736531012
+
+    console.log(`Tx IDs: ${txIds}`);
+    console.log(`ABI Results: ${abiResults}`);
   };
 
-  const getOpenGames = async (gamebookAppID = defaultID) => {
-    const gameClient = await getGameClient(gamebookAppID);
-    const createdApps = (
-      await algorandClient.account.getInformation(gameClient.appAddress)
-    ).createdApps!;
-    console.log(createdApps);
+  const joinAlgoGame = async (openGameState: OpenGameState) => {
+    const algoPotatoClient = await getAppClient();
+    const appAddress = algoPotatoClient.appAddress;
 
-    const appsGlobalState = await Promise.all(
-      createdApps.map(async (app) => {
-        const state = await getGameState(BigInt(app.id));
-        return {
-          ...state,
-          amount: state.amount
-            ? AlgoAmount.MicroAlgos(state.amount)
-            : undefined,
-        };
-      })
-    );
-    setOpenGames(appsGlobalState as GameInfo[]);
-    console.log(appsGlobalState);
+    const assetDeposit = algorandClient.createTransaction.payment({
+      sender: activeAddress!,
+      signer: transactionSigner,
+      receiver: appAddress,
+      amount: AlgoAmount.MicroAlgo(openGameState.assetAmount),
+    });
 
-    setOpenGames(appsGlobalState!);
+    const primeResponse = await algoPotatoClient.send.primeGameVrf({
+      args: {
+        gameBoxName: {
+          player_1: openGameState.player_1,
+          counter: openGameState.counter,
+        },
+        assetDeposit: assetDeposit,
+      },
+    });
 
-    return appsGlobalState;
+    const primeTxIds = primeResponse.txIds;
+    const primeTxResults = primeResponse.return;
+
+    console.table({ primeTxResults, primeTxIds });
   };
 
-  const registerGame = async (amount: number, gamebookAppID = defaultID) => {
-    const gameClient = await getGameClient(gamebookAppID);
-    const registerPayment = algosdk.makePaymentTxnWithSuggestedParamsFromObject(
-      {
-        from: connectedWalletSignerAcc.addr,
-        to: gameClient.appAddress,
-        amount: amount,
-        suggestedParams: await algorandClient.getSuggestedParams(),
+  const playGame = async (openGameState: OpenGameState) => {
+    const algoPotatoClient = await getAppClient();
+
+    // const playTxnResponse = await algoPotatoClient
+    //   .newGroup()
+    //   .playGame({
+    //     args: {
+    //       gameBoxName: {
+    //         player_1: openGameState.player_1,
+    //         counter: openGameState.counter,
+    //       },
+    //     },
+    //   })
+    //   .send({ populateAppCallResources: true});
+
+    const playTxnResponse = await algoPotatoClient.send.playGame({
+      args: {
+        gameBoxName: {
+          player_1: openGameState.player_1,
+          counter: openGameState.counter,
+        },
+      },
+      populateAppCallResources: true,
+      // **NOTE LEO has 'cover_app_call_inner_transaction_fees': True on the 🐍 scripts but I don't see that option for the TS library
+      // https://github.com/atsoc1993/Hot-Potato-Contract-AVM/blob/main/2b_create_game_asset.py#L69
+      // as a consequence maxFee calculations fail because they don't account for innerTxns forcing me to use StaticFee(aka the worst case each time)
+
+      staticFee: AlgoAmount.MicroAlgo(260_000),
+    });
+
+    const playTxIds = playTxnResponse.txIds;
+    const playTxResults = playTxnResponse.return;
+
+    console.table({ playTxIds, playTxResults });
+  };
+
+  const createGameAsset = async (assetId: bigint, amount: bigint) => {
+    const algoPotatoClient = await getAppClient();
+
+    const appAddress = algoPotatoClient.appAddress;
+
+    const assetDeposit = algorandClient.createTransaction.assetTransfer({
+      sender: activeAddress!,
+      signer: transactionSigner,
+      receiver: appAddress,
+      assetId,
+      amount,
+    });
+
+    const mbrFee = algorandClient.createTransaction.payment({
+      sender: activeAddress!,
+      signer: transactionSigner,
+      receiver: appAddress,
+      amount: AlgoAmount.MicroAlgo(60_100),
+    });
+
+    const newAppGroupTx = algoPotatoClient.newGroup();
+
+    let contractOptedIntoAsset = true;
+
+    const accountInformation = await algorandClient.client.algod
+      .accountAssetInformation(appAddress, Number(assetId))
+      .do()
+      .catch(() => (contractOptedIntoAsset = false));
+
+    console.log(accountInformation);
+
+    console.log(contractOptedIntoAsset);
+
+    if (!contractOptedIntoAsset) {
+      const optInFee = algorandClient.createTransaction.payment({
+        sender: activeAddress!,
+        signer: transactionSigner,
+        receiver: appAddress,
+        amount: AlgoAmount.Algo(0.1),
+      });
+
+      newAppGroupTx.assetOptIn({
+        args: { asset: assetId, mbrPayment: optInFee },
+        maxFee: AlgoAmount.Algo(0.01),
+      });
+    }
+
+    newAppGroupTx.createGame({
+      args: { assetDeposit: assetDeposit, mbrFee },
+      maxFee: AlgoAmount.Algo(0.01),
+    });
+
+    const txnResponse = await newAppGroupTx.send({
+      populateAppCallResources: true,
+      // **NOTE LEO has 'cover_app_call_inner_transaction_fees': True on the 🐍 scripts but I don't see that option for the TS library
+      // https://github.com/atsoc1993/Hot-Potato-Contract-AVM/blob/main/2b_create_game_asset.py#L69
+    });
+
+    const txIds = txnResponse.txIds;
+    const abiResults = txnResponse.returns;
+
+    console.log(`Tx IDs: ${txIds}`);
+    console.log(`ABI Results: ${abiResults[0]}`);
+  };
+
+  const getOpenGames = async () => {
+    const algoPotatoClient = await getAppClient();
+    const _openGames: OpenGameState[] = [];
+
+    (await algoPotatoClient.state.box.gameBox.getMap()).forEach(
+      (value, key) => {
+        console.log('hit');
+        const {
+          player_1,
+          player_2,
+          player_1Round,
+          player_2Round,
+          vrfRound,
+          asset,
+          assetAmount,
+        } = value;
+
+        const { counter } = key;
+
+        console.log(`
+          BoxKey: ${key.counter}-${key.player_1}
+          Player 1: ${player_1}
+          Player 2: ${
+            encodeAddress(new Uint8Array(32)) !== player_2 ? player_2 : null
+          }
+          Player 1 Round: ${player_1Round}
+          Player 2 Round: ${player_2Round !== BigInt(0) ? player_2Round : null}
+          VRF Round: ${vrfRound === BigInt(0) ? null : vrfRound}
+          Asset: ${asset === BigInt(0) ? 'Algorand' : asset}
+          Amount: ${assetAmount.toLocaleString(undefined, {
+            maximumFractionDigits: 0,
+          })}`);
+
+        _openGames.push({
+          player_1,
+          player_2,
+          player_1Round,
+          player_2Round,
+          vrfRound,
+          asset,
+          assetAmount,
+          counter,
+        });
       }
     );
-
-    const registerResponse = await gameClient.send.register({
-      args: {
-        payment: registerPayment,
-      },
-      staticFee: algokit.microAlgos(5_000),
-    });
-
-    console.log(registerResponse.return!);
-  };
-
-  const playGame = async (
-    amount: bigint,
-    appId: bigint,
-    gameBookAppID = defaultID
-  ) => {
-    const gameClient = await getGameClient(gameBookAppID);
-    const params = await algorandClient.getSuggestedParams();
-
-    const playPayment = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      from: connectedWalletSignerAcc.addr,
-      to: gameClient.appAddress,
-      amount: amount,
-      suggestedParams: params,
-    });
-    const playResponse = await gameClient.send.play({
-      args: {
-        payment: playPayment,
-        appId: appId,
-      },
-      staticFee: algokit.microAlgos(6_000),
-    });
-
-    console.log(playResponse.return!);
+    setOpenGames(_openGames);
   };
 
   return {
-    registerGame,
-    getGameClient,
+    createAndFund,
+    appId,
+    createGame,
+    createGameAsset,
     getOpenGames,
     openGames,
+    joinAlgoGame,
     playGame,
-    getGameBookState,
-    gameBookState,
   };
 };
 
