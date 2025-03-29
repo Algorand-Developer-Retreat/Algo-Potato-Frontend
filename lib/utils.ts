@@ -74,7 +74,7 @@ export async function checkAlgoBalance(address: string) {
   const { account } = await algorandClient.client.indexer
     .lookupAccountByID(address)
     .do();
-  return [account.amount, account['min-balance']];
+  return [account.amount, account['minBalance']];
 }
 
 export function copyAddress(address: string) {

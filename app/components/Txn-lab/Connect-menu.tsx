@@ -132,7 +132,7 @@ export default function ConnectMenu() {
       setIsLoading(true);
       try {
         const balance = await checkAlgoBalance(activeAccount.address);
-        setAlgoBalance(balance);
+        setAlgoBalance(balance.map((value) => Number(value)));
       } catch (error) {
         console.log('Failed to fetch balance:', error);
       } finally {

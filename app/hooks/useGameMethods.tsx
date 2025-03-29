@@ -1,6 +1,6 @@
 import { useWallet } from '@txnlab/use-wallet-react';
-import { TransactionSignerAccount } from '@algorandfoundation/algokit-utils/types/account';
-import algosdk, { ABIType, encodeAddress } from 'algosdk';
+
+import { encodeAddress } from 'algosdk';
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount';
 import * as algokit from '@algorandfoundation/algokit-utils';
 import { useState } from 'react';
@@ -143,8 +143,9 @@ const useGameMethods = () => {
       // **NOTE LEO has 'cover_app_call_inner_transaction_fees': True on the 🐍 scripts but I don't see that option for the TS library
       // https://github.com/atsoc1993/Hot-Potato-Contract-AVM/blob/main/2b_create_game_asset.py#L69
       // as a consequence maxFee calculations fail because they don't account for innerTxns forcing me to use StaticFee(aka the worst case each time)
+      coverAppCallInnerTransactionFees: true,
 
-      staticFee: AlgoAmount.MicroAlgo(260_000),
+      // staticFee: AlgoAmount.MicroAlgo(260_000),
     });
 
     const playTxIds = playTxnResponse.txIds;
@@ -207,6 +208,7 @@ const useGameMethods = () => {
 
     const txnResponse = await newAppGroupTx.send({
       populateAppCallResources: true,
+      coverAppCallInnerTransactionFees: true,
       // **NOTE LEO has 'cover_app_call_inner_transaction_fees': True on the 🐍 scripts but I don't see that option for the TS library
       // https://github.com/atsoc1993/Hot-Potato-Contract-AVM/blob/main/2b_create_game_asset.py#L69
     });
