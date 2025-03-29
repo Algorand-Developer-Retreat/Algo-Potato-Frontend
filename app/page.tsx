@@ -4,14 +4,8 @@ import useGameMethods from '@/hooks/useGameMethods';
 import { OpenGameState } from '@/hooks/useGameMethods';
 
 export default function GameDashboard() {
-  const {
-    createGame,
-    createGameAsset,
-    openGames,
-    getOpenGames,
-    joinAlgoGame,
-    playGame,
-  } = useGameMethods();
+  const { createGame, openGames, getOpenGames, joinAlgoGame, playGame } =
+    useGameMethods();
   const appId = process.env.NEXT_PUBLIC_APP_ID;
 
   const [amount, setAmount] = useState('');
@@ -27,9 +21,6 @@ export default function GameDashboard() {
     e.preventDefault();
     createGame(Number(amount));
   };
-
-  const amt = BigInt(2999);
-  const id = BigInt(736533214);
 
   useEffect(() => {
     getOpenGames();
