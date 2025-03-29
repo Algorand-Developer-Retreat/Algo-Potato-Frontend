@@ -5,6 +5,7 @@ import './globals.css';
 import WalletProviderClient from '../clients/walletProviderClient';
 import { Toaster } from '@/components/ui/toaster';
 import Navbar from './components/Navbar/Navbar';
+import Footer from './components/Footer/Footer';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,6 +35,7 @@ export default function RootLayout({
         <WalletProviderClient>
           <Navbar />
           {children}
+          <Footer />
           <Toaster />
         </WalletProviderClient>
       </body>
