@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Toss Up Arena',
+  title: 'Algopotato',
   description: 'A battleground for testing Psuedorandomness on Algorand',
 };
 
