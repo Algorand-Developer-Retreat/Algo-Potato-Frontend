@@ -70,7 +70,7 @@ export default function Navbar() {
                 hover:from-purple-600 hover:to-blue-600 
                 cursor-pointer'
               >
-                🤺 Toss Up Arena 🤺
+                🥔 AlgoPotato 🥔
               </h1>
             </Link>
           </div>
