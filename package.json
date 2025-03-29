@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@algorandfoundation/algokit-client-generator": "^5.0.0",
     "@algorandfoundation/algokit-utils": "^9.0.0",
     "@blockshake/defly-connect": "^1.1.6",
     "@hookform/resolvers": "^3.10.0",
