@@ -29,7 +29,7 @@
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.5",
     "@radix-ui/react-tooltip": "^1.1.8",
-    "@txnlab/use-wallet-react": "^3.11.0",
+    "@txnlab/use-wallet-react": "^4.0.0",
     "@types/backblaze-b2": "^1.5.2",
     "@types/big.js": "^6.2.2",
     "@walletconnect/modal": "^2.7.0",
