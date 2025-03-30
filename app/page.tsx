@@ -3,9 +3,17 @@ import { useEffect, useState } from 'react';
 import useGameMethods from '@/hooks/useGameMethods';
 import { OpenGameState } from '@/hooks/useGameMethods';
 
+import RoundInfo from './components/ui/round-info';
 export default function GameDashboard() {
-  const { createGame, openGames, getOpenGames, joinAlgoGame, playGame } =
-    useGameMethods();
+  const {
+    createGame,
+    openGames,
+    getOpenGames,
+    joinAlgoGame,
+    playGame,
+    getCurrentRound,
+    currentRound,
+  } = useGameMethods();
   const appId = process.env.NEXT_PUBLIC_APP_ID;
 
   const [amount, setAmount] = useState('');
@@ -24,23 +32,37 @@ export default function GameDashboard() {
 
   useEffect(() => {
     getOpenGames();
+    getCurrentRound(); // Initial fetch
+
+    const intervalId = setInterval(() => {
+      getCurrentRound();
+    }, 3000);
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
     <main className='p-6 max-w-3xl mx-auto'>
+      {/* Blockchain Info is now a separate component at the top of the page */}
+      <div className='flex justify-end mb-4'>
+        <RoundInfo appId={appId!} currentRound={currentRound} />
+      </div>
+
       <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-3xl shadow-xl overflow-hidden mb-8'>
         <div className='p-8'>
           <div className='flex items-center justify-between mb-8'>
             <h1 className='text-3xl font-bold text-gray-800'>
               Create New Game
             </h1>
-            <div className='bg-white px-4 py-2 rounded-lg shadow-sm'>
-              <span className='text-sm text-gray-500'>App ID:</span>
-              <span className='ml-2 font-mono font-medium'>{appId}</span>
-            </div>
           </div>
 
-          <button onClick={() => getOpenGames()}>Refresh Games</button>
+          <button
+            onClick={() => getOpenGames()}
+            className='px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors mb-6 shadow-sm'
+          >
+            Refresh Games
+          </button>
 
           <form onSubmit={handleSubmit} className='space-y-6'>
             <div className='space-y-4'>
@@ -177,15 +199,13 @@ export default function GameDashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className='mt-4 flex justify-end'>
+                  <div className='mt-4 flex justify-end gap-3'>
                     <button
                       onClick={() => joinAlgoGame(game)} //This is where you would check if the game asset was algo or asset and call a different method depending
                       className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
                     >
                       Join Game
                     </button>
-                  </div>
-                  <div className='mt-4 flex justify-end'>
                     <button
                       onClick={() => playGame(game)}
                       className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
