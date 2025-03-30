@@ -23,21 +23,6 @@ const useGameMethods = () => {
   const { transactionSigner, activeAddress } = useWallet();
   const [appId, setAppId] = useState<bigint | null>(null);
   const [openGames, setOpenGames] = useState<OpenGameState[]>([]);
-  const [currentRound, setCurrentRound] = useState(BigInt(0));
-
-  const getCurrentRound = async () => {
-    try {
-      const syncRound = (await algorandClient.client.algod.status().do())[
-        'lastRound'
-      ];
-      console.log(syncRound);
-      setCurrentRound(syncRound);
-      return syncRound;
-    } catch (error) {
-      console.error('Error fetching current round:', error);
-      return currentRound;
-    }
-  };
 
   const createAndFund = async () => {
     const factory = new AlgoPotatoFactory({
@@ -292,8 +277,6 @@ const useGameMethods = () => {
     openGames,
     joinAlgoGame,
     playGame,
-    getCurrentRound,
-    currentRound,
   };
 };
 
