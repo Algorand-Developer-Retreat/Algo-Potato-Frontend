@@ -39,7 +39,7 @@ export default function GameDashboard() {
 
   useEffect(() => {
     getAccountAssets();
-  }, [activeAddress, getAccountAssets]);
+  }, [activeAddress]);
 
   return (
     <main className='p-6 max-w-3xl mx-auto'>
