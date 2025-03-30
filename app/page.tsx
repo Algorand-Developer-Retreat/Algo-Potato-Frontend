@@ -2,28 +2,23 @@
 import { useEffect, useState } from 'react';
 import useGameMethods from '@/hooks/useGameMethods';
 import { OpenGameState } from '@/hooks/useGameMethods';
+import useAlgorand from './hooks/useAlgorand';
+import { useWallet } from '@txnlab/use-wallet-react';
 
 import RoundInfo from './components/ui/round-info';
 export default function GameDashboard() {
-  const {
-    createGame,
-    openGames,
-    getOpenGames,
-    joinAlgoGame,
-    playGame,
-    getCurrentRound,
-    currentRound,
-  } = useGameMethods();
+  const { createGame, openGames, getOpenGames, joinAlgoGame, playGame } =
+    useGameMethods();
+
+  const { currentRound, getCurrentRound, getAccountAssets, accountAssets } =
+    useAlgorand();
+
+  const { activeAddress } = useWallet();
+
   const appId = process.env.NEXT_PUBLIC_APP_ID;
 
   const [amount, setAmount] = useState('');
   const [selectedAsset, setSelectedAsset] = useState('ALGO');
-
-  const assets = [
-    { id: 'ALGO', name: 'Algorand' },
-    { id: 'USDC', name: 'USD Coin' },
-    { id: 'PLANETS', name: 'Planets' },
-  ];
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -42,11 +37,16 @@ export default function GameDashboard() {
     return () => clearInterval(intervalId);
   }, []);
 
+  useEffect(() => {
+    getAccountAssets();
+  }, [activeAddress, getAccountAssets]);
+
   return (
     <main className='p-6 max-w-3xl mx-auto'>
       {/* Blockchain Info is now a separate component at the top of the page */}
       <div className='flex justify-end mb-4'>
         <RoundInfo appId={appId!} currentRound={currentRound} />
+        <button onClick={getAccountAssets}>get info</button>
       </div>
 
       <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-3xl shadow-xl overflow-hidden mb-8'>
@@ -73,11 +73,13 @@ export default function GameDashboard() {
                   onChange={(e) => setSelectedAsset(e.target.value)}
                   className='mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white p-3'
                 >
-                  {assets.map((asset) => (
-                    <option key={asset.id} value={asset.id}>
-                      {asset.name} ({asset.id})
-                    </option>
-                  ))}
+                  {[{ assetId: 0, assetName: 'Algo' }, ...accountAssets].map(
+                    (asset) => (
+                      <option key={asset.assetId} value={Number(asset.assetId)}>
+                        {asset.assetName} ({asset.assetId})
+                      </option>
+                    )
+                  )}
                 </select>
               </label>
 
