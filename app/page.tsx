@@ -7,8 +7,14 @@ import { useWallet } from '@txnlab/use-wallet-react';
 
 import RoundInfo from './components/ui/round-info';
 export default function GameDashboard() {
-  const { createGame, openGames, getOpenGames, joinAlgoGame, playGame } =
-    useGameMethods();
+  const {
+    createGame,
+    openGames,
+    getOpenGames,
+    joinAlgoGame,
+    playGame,
+    createAssetGame,
+  } = useGameMethods();
 
   const { currentRound, getCurrentRound, getAccountAssets, accountAssets } =
     useAlgorand();
@@ -18,11 +24,16 @@ export default function GameDashboard() {
   const appId = process.env.NEXT_PUBLIC_APP_ID;
 
   const [amount, setAmount] = useState('');
-  const [selectedAsset, setSelectedAsset] = useState('ALGO');
+  const [selectedAsset, setSelectedAsset] = useState('0');
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    createGame(Number(amount));
+
+    if (selectedAsset === '0') {
+      createGame(Number(amount));
+    } else {
+      createAssetGame(BigInt(selectedAsset), BigInt(amount));
+    }
   };
 
   useEffect(() => {
@@ -46,7 +57,6 @@ export default function GameDashboard() {
       {/* Blockchain Info is now a separate component at the top of the page */}
       <div className='flex justify-end mb-4'>
         <RoundInfo appId={appId!} currentRound={currentRound} />
-        <button onClick={getAccountAssets}>get info</button>
       </div>
 
       <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-3xl shadow-xl overflow-hidden mb-8'>
