@@ -154,7 +154,7 @@ const useGameMethods = () => {
     console.table({ playTxIds, playTxResults });
   };
 
-  const createGameAsset = async (assetId: bigint, amount: bigint) => {
+  const createAssetGame = async (assetId: bigint, amount: bigint) => {
     const algoPotatoClient = await getAppClient();
 
     const appAddress = algoPotatoClient.appAddress;
@@ -272,7 +272,7 @@ const useGameMethods = () => {
     createAndFund,
     appId,
     createGame,
-    createGameAsset,
+    createAssetGame,
     getOpenGames,
     openGames,
     joinAlgoGame,
