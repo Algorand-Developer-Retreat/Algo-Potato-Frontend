@@ -117,21 +117,34 @@ const useGameMethods = () => {
     console.table({ primeTxResults, primeTxIds });
   };
 
+  const joinAssetGame = async (openGameState: OpenGameState) => {
+    const algoPotatoClient = await getAppClient();
+    const appAddress = algoPotatoClient.appAddress;
+
+    const assetDeposit = algorandClient.createTransaction.assetTransfer({
+      sender: activeAddress!,
+      signer: transactionSigner,
+      receiver: appAddress,
+      assetId: BigInt(openGameState.asset),
+      amount: openGameState.assetAmount,
+    });
+    const primeResponse = await algoPotatoClient.send.primeGameVrf({
+      args: {
+        gameBoxName: {
+          player_1: openGameState.player_1,
+          counter: openGameState.counter,
+        },
+        assetDeposit: assetDeposit,
+      },
+    });
+
+    const primeTxIds = primeResponse.txIds;
+    const primeTxResults = primeResponse.return;
+    console.table({ primeTxResults, primeTxIds });
+  };
+
   const playGame = async (openGameState: OpenGameState) => {
     const algoPotatoClient = await getAppClient();
-
-    // const playTxnResponse = await algoPotatoClient
-    //   .newGroup()
-    //   .playGame({
-    //     args: {
-    //       gameBoxName: {
-    //         player_1: openGameState.player_1,
-    //         counter: openGameState.counter,
-    //       },
-    //     },
-    //   })
-    //   .send({ populateAppCallResources: true});
-
     const playTxnResponse = await algoPotatoClient.send.playGame({
       args: {
         gameBoxName: {
@@ -140,12 +153,8 @@ const useGameMethods = () => {
         },
       },
       populateAppCallResources: true,
-      // **NOTE LEO has 'cover_app_call_inner_transaction_fees': True on the 🐍 scripts but I don't see that option for the TS library
-      // https://github.com/atsoc1993/Hot-Potato-Contract-AVM/blob/main/2b_create_game_asset.py#L69
-      // as a consequence maxFee calculations fail because they don't account for innerTxns forcing me to use StaticFee(aka the worst case each time)
       coverAppCallInnerTransactionFees: true,
-
-      // staticFee: AlgoAmount.MicroAlgo(260_000),
+      maxFee: AlgoAmount.MicroAlgo(260_000),
     });
 
     const playTxIds = playTxnResponse.txIds;
@@ -265,6 +274,9 @@ const useGameMethods = () => {
         });
       }
     );
+    _openGames.sort(
+      (a, b) => Number(a.player_1Round) - Number(b.player_1Round)
+    );
     setOpenGames(_openGames);
   };
 
@@ -277,6 +289,7 @@ const useGameMethods = () => {
     openGames,
     joinAlgoGame,
     playGame,
+    joinAssetGame,
   };
 };
 
