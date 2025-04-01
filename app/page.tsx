@@ -14,6 +14,7 @@ export default function GameDashboard() {
     joinAlgoGame,
     playGame,
     createAssetGame,
+    joinAssetGame,
   } = useGameMethods();
 
   const { currentRound, getCurrentRound, getAccountAssets, accountAssets } =
@@ -25,6 +26,17 @@ export default function GameDashboard() {
 
   const [amount, setAmount] = useState('');
   const [selectedAsset, setSelectedAsset] = useState('0');
+
+  const disableGame = (gameState: OpenGameState, currentRound: bigint) => {
+    if (gameState.vrfRound === BigInt(0)) {
+      return true;
+    }
+    if (gameState.asset === BigInt(0)) {
+      return gameState.vrfRound + BigInt(15) >= currentRound ? true : false;
+    }
+    if (accountAssets.map((asset) => asset.assetId).includes(gameState.asset))
+      return gameState.vrfRound + BigInt(15) >= currentRound ? true : false;
+  };
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -42,6 +54,7 @@ export default function GameDashboard() {
 
     const intervalId = setInterval(() => {
       getCurrentRound();
+      getOpenGames();
     }, 3000);
 
     // Clean up the interval when the component unmounts
@@ -213,14 +226,21 @@ export default function GameDashboard() {
                   </div>
                   <div className='mt-4 flex justify-end gap-3'>
                     <button
-                      onClick={() => joinAlgoGame(game)} //This is where you would check if the game asset was algo or asset and call a different method depending
+                      onClick={() => {
+                        if (game.asset === BigInt(0)) {
+                          joinAlgoGame(game);
+                        } else {
+                          joinAssetGame(game);
+                        }
+                      }} //This is where you would check if the game asset was algo or asset and call a different method depending
                       className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
                     >
                       Join Game
                     </button>
                     <button
                       onClick={() => playGame(game)}
-                      className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
+                      className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
+                      disabled={disableGame(game, currentRound)}
                     >
                       Play Game
                     </button>
