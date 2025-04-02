@@ -229,6 +229,27 @@ const useGameMethods = () => {
     console.log(`ABI Results: ${abiResults[0]}`);
   };
 
+  const cancelGame = async (openGameState: OpenGameState) => {
+    const algoPotatoClient = await getAppClient();
+
+    const txnResponse = await algoPotatoClient.send.cancelGame({
+      args: {
+        gameBoxName: {
+          player_1: openGameState.player_1,
+          counter: openGameState.counter,
+        },
+      },
+      maxFee: AlgoAmount.MicroAlgo(2_000),
+      populateAppCallResources: true,
+      coverAppCallInnerTransactionFees: true,
+    });
+
+    const txnIds = txnResponse.txIds;
+    const abiResult = txnResponse.return;
+
+    console.table({ txnIds, abiResult });
+  };
+
   const getOpenGames = async () => {
     const algoPotatoClient = await getAppClient();
     const _openGames: OpenGameState[] = [];
@@ -290,6 +311,7 @@ const useGameMethods = () => {
     joinAlgoGame,
     playGame,
     joinAssetGame,
+    cancelGame,
   };
 };
 
