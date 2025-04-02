@@ -29,6 +29,9 @@ export default function GameDashboard() {
   const [amount, setAmount] = useState('');
   const [selectedAsset, setSelectedAsset] = useState('0');
 
+  // Add active tab state
+  const [activeTab, setActiveTab] = useState('open-games');
+
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
   const [filteredGames, setFilteredGames] = useState<OpenGameState[]>([]);
@@ -71,10 +74,10 @@ export default function GameDashboard() {
     }
   };
 
-  const handleFilterChange = (e: {
-    target: { name: any; value: any; type: any; checked: any };
+  const handleFilterChange = (event: {
+    target: { name: string; value: string; type: string; checked?: boolean };
   }) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked } = event.target;
     setFilters({
       ...filters,
       [name]: type === 'checkbox' ? checked : value,
@@ -168,329 +171,369 @@ export default function GameDashboard() {
         <RoundInfo appId={appId!} currentRound={currentRound} />
       </div>
 
-      <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-3xl shadow-xl overflow-hidden mb-8'>
-        <div className='p-8'>
-          <div className='flex items-center justify-between mb-8'>
-            <h1 className='text-3xl font-bold text-gray-800'>
-              Create New Game
-            </h1>
-          </div>
-
+      {/* Tab Navigation */}
+      <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-t-3xl shadow-xl overflow-hidden mb-px'>
+        <div className='flex border-b border-gray-200'>
           <button
-            onClick={() => getOpenGames()}
-            className='px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors mb-6 shadow-sm'
+            onClick={() => setActiveTab('open-games')}
+            className={`flex-1 py-4 text-center font-medium text-lg transition-colors ${
+              activeTab === 'open-games'
+                ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:bg-white/50'
+            }`}
           >
-            Refresh Games
+            Open Games
           </button>
-
-          <form onSubmit={handleSubmit} className='space-y-6'>
-            <div className='space-y-4'>
-              <label className='block'>
-                <span className='text-gray-700 font-medium'>Select Asset</span>
-                <select
-                  value={selectedAsset}
-                  onChange={(e) => setSelectedAsset(e.target.value)}
-                  className='mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white p-3'
-                >
-                  {[{ assetId: 0, assetName: 'Algo' }, ...accountAssets].map(
-                    (asset) => (
-                      <option key={asset.assetId} value={Number(asset.assetId)}>
-                        {asset.assetName} ({asset.assetId})
-                      </option>
-                    )
-                  )}
-                </select>
-              </label>
-
-              <label className='block'>
-                <span className='text-gray-700 font-medium'>Amount</span>
-                <div className='mt-1 relative rounded-lg shadow-sm'>
-                  <input
-                    type='number'
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder='Enter amount'
-                    min='0'
-                    step='0.01'
-                    className='block w-full rounded-lg border-gray-300 pr-12 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
-                  />
-                  <div className='absolute inset-y-0 right-0 flex items-center pr-3'>
-                    <span className='text-gray-500 sm:text-sm'>
-                      {selectedAsset}
-                    </span>
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            <div className='pt-4'>
-              <button
-                type='submit'
-                disabled={!amount}
-                className='w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
-              >
-                Create Game
-              </button>
-            </div>
-          </form>
+          <button
+            onClick={() => setActiveTab('create-game')}
+            className={`flex-1 py-4 text-center font-medium text-lg transition-colors ${
+              activeTab === 'create-game'
+                ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:bg-white/50'
+            }`}
+          >
+            Create New Game
+          </button>
         </div>
       </div>
 
-      {/* Open Games Section with Filters */}
-      <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-3xl shadow-xl overflow-hidden'>
+      {/* Content Container */}
+      <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-b-3xl shadow-xl overflow-hidden mb-8'>
         <div className='p-8'>
-          <div className='flex justify-between items-center mb-6'>
-            <h2 className='text-2xl font-bold text-gray-800'>Open Games</h2>
-            <div className='flex space-x-2'>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className='flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm'
-              >
-                <Filter size={16} />
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
-              </button>
-              {Object.values(filters).some(
-                (value) => value !== '' && value !== false && value !== 'all'
-              ) && (
-                <button
-                  onClick={clearFilters}
-                  className='flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm'
-                >
-                  <X size={16} />
-                  Clear Filters
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Filters Section */}
-          {showFilters && (
-            <div className='bg-white p-4 rounded-lg shadow-md mb-6 animate-fadeIn'>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                <div>
-                  <label className='block mb-4'>
-                    <span className='text-gray-700 font-medium'>
-                      Player Address
-                    </span>
-                    <div className='flex mt-1'>
-                      <div className='relative flex-grow'>
-                        <Search className='absolute left-3 top-3 h-4 w-4 text-gray-400' />
-                        <input
-                          type='text'
-                          name='player'
-                          value={filters.player}
-                          onChange={handleFilterChange}
-                          placeholder='Search by player address'
-                          className='pl-10 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
-                        />
-                      </div>
-                    </div>
-                  </label>
-
-                  <label className='block mb-4'>
-                    <span className='text-gray-700 font-medium'>Asset ID</span>
-                    <input
-                      type='text'
-                      name='assetId'
-                      value={filters.assetId}
-                      onChange={handleFilterChange}
-                      placeholder='Filter by asset ID'
-                      className='mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
-                    />
-                  </label>
-                </div>
-
-                <div>
-                  <div className='mb-4'>
-                    <span className='text-gray-700 font-medium block mb-2'>
-                      Amount Range
-                    </span>
-                    <div className='grid grid-cols-2 gap-4'>
-                      <input
-                        type='number'
-                        name='minAmount'
-                        value={filters.minAmount}
-                        onChange={handleFilterChange}
-                        placeholder='Min'
-                        className='block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
-                      />
-                      <input
-                        type='number'
-                        name='maxAmount'
-                        value={filters.maxAmount}
-                        onChange={handleFilterChange}
-                        placeholder='Max'
-                        className='block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
-                      />
-                    </div>
-                  </div>
-
-                  <div className='grid grid-cols-2 gap-4 mb-2'>
-                    <label className='flex items-center space-x-2'>
-                      <input
-                        type='checkbox'
-                        name='showMyGames'
-                        checked={filters.showMyGames}
-                        onChange={handleFilterChange}
-                        className='rounded text-blue-500 focus:ring-blue-500'
-                      />
-                      <span className='text-gray-700'>My Games Only</span>
-                    </label>
-
-                    <div>
-                      <label className='block'>
-                        <span className='text-gray-700 font-medium'>
-                          Asset Type
-                        </span>
-                        <select
-                          name='assetType'
-                          value={filters.assetType}
-                          onChange={handleFilterChange}
-                          className='mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
-                        >
-                          <option value='all'>All Types</option>
-                          <option value='algo'>Algo Only</option>
-                          <option value='assets'>ASAs Only</option>
-                        </select>
-                      </label>
-                    </div>
-                  </div>
+          {/* Open Games Tab Content */}
+          {activeTab === 'open-games' && (
+            <>
+              <div className='flex justify-between items-center mb-6'>
+                <h2 className='text-2xl font-bold text-gray-800'>Open Games</h2>
+                <div className='flex space-x-2'>
+                  <button
+                    onClick={() => getOpenGames()}
+                    className='flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm mr-2'
+                  >
+                    Refresh Games
+                  </button>
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className='flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm'
+                  >
+                    <Filter size={16} />
+                    {showFilters ? 'Hide Filters' : 'Show Filters'}
+                  </button>
+                  {Object.values(filters).some(
+                    (value) =>
+                      value !== '' && value !== false && value !== 'all'
+                  ) && (
+                    <button
+                      onClick={clearFilters}
+                      className='flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm'
+                    >
+                      <X size={16} />
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Games List */}
-          {filteredGames.length === 0 ? (
-            <div className='text-center py-8 text-gray-500'>
-              No games match your filters
-            </div>
-          ) : (
-            <div className='space-y-4'>
-              {filteredGames.map((game, index) => (
-                <div
-                  key={index}
-                  className='bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow'
-                >
+              {/* Filters Section */}
+              {showFilters && (
+                <div className='bg-white p-4 rounded-lg shadow-md mb-6 animate-fadeIn'>
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                     <div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          BoxName:
+                      <label className='block mb-4'>
+                        <span className='text-gray-700 font-medium'>
+                          Player Address
                         </span>
-                        <span className='ml-2 font-mono break-all'>
-                          {game.counter.toString()} - {game.player_1}
+                        <div className='flex mt-1'>
+                          <div className='relative flex-grow'>
+                            <Search className='absolute left-3 top-3 h-4 w-4 text-gray-400' />
+                            <input
+                              type='text'
+                              name='player'
+                              value={filters.player}
+                              onChange={handleFilterChange}
+                              placeholder='Search by player address'
+                              className='pl-10 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
+                            />
+                          </div>
+                        </div>
+                      </label>
+
+                      <label className='block mb-4'>
+                        <span className='text-gray-700 font-medium'>
+                          Asset ID
                         </span>
-                      </div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          Player 1:
-                        </span>
-                        <span className='ml-2 font-mono break-all'>
-                          {game.player_1}
-                        </span>
-                        {game.player_1 === activeAddress && (
-                          <span className='ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full'>
-                            You
-                          </span>
-                        )}
-                      </div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          Player 2:
-                        </span>
-                        <span className='ml-2 font-mono break-all'>
-                          {game.player_2}
-                        </span>
-                        {game.player_2 === activeAddress && (
-                          <span className='ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full'>
-                            You
-                          </span>
-                        )}
-                      </div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          Player 1 Round:
-                        </span>
-                        <span className='ml-2 font-mono'>
-                          {game.player_1Round.toString()}
-                        </span>
-                      </div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          Player 2 Round:
-                        </span>
-                        <span className='ml-2 font-mono'>
-                          {game.player_2Round.toString()}
-                        </span>
-                      </div>
+                        <input
+                          type='text'
+                          name='assetId'
+                          value={filters.assetId}
+                          onChange={handleFilterChange}
+                          placeholder='Filter by asset ID'
+                          className='mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
+                        />
+                      </label>
                     </div>
+
                     <div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          VRF Round:
+                      <div className='mb-4'>
+                        <span className='text-gray-700 font-medium block mb-2'>
+                          Amount Range
                         </span>
-                        <span className='ml-2 font-mono'>
-                          {game.vrfRound.toString()}
-                        </span>
+                        <div className='grid grid-cols-2 gap-4'>
+                          <input
+                            type='number'
+                            name='minAmount'
+                            value={filters.minAmount}
+                            onChange={handleFilterChange}
+                            placeholder='Min'
+                            className='block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
+                          />
+                          <input
+                            type='number'
+                            name='maxAmount'
+                            value={filters.maxAmount}
+                            onChange={handleFilterChange}
+                            placeholder='Max'
+                            className='block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
+                          />
+                        </div>
                       </div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          Asset ID:
-                        </span>
-                        <span className='ml-2 font-mono'>
-                          {game.asset.toString() === '0' ? (
-                            <span className='text-green-600 font-medium'>
-                              Algo
+
+                      <div className='grid grid-cols-2 gap-4 mb-2'>
+                        <label className='flex items-center space-x-2'>
+                          <input
+                            type='checkbox'
+                            name='showMyGames'
+                            checked={filters.showMyGames}
+                            onChange={handleFilterChange}
+                            className='rounded text-blue-500 focus:ring-blue-500'
+                          />
+                          <span className='text-gray-700'>My Games Only</span>
+                        </label>
+
+                        <div>
+                          <label className='block'>
+                            <span className='text-gray-700 font-medium'>
+                              Asset Type
                             </span>
-                          ) : (
-                            game.asset.toString()
-                          )}
-                        </span>
-                      </div>
-                      <div className='mb-2'>
-                        <span className='text-gray-500 font-medium'>
-                          Asset Amount:
-                        </span>
-                        <span className='ml-2 font-mono'>
-                          {game.assetAmount.toString()}
-                        </span>
+                            <select
+                              name='assetType'
+                              value={filters.assetType}
+                              onChange={handleFilterChange}
+                              className='mt-1 block w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
+                            >
+                              <option value='all'>All Types</option>
+                              <option value='algo'>Algo Only</option>
+                              <option value='assets'>ASAs Only</option>
+                            </select>
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className='mt-4 flex justify-end gap-3'>
-                    <button
-                      onClick={() => {
-                        if (game.asset === BigInt(0)) {
-                          joinAlgoGame(game);
-                        } else {
-                          joinAssetGame(game);
-                        }
-                      }}
-                      className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
-                    >
-                      Join Game
-                    </button>
-                    <button
-                      onClick={() => playGame(game)}
-                      className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
-                      disabled={disablePlayGame(game, currentRound)}
-                    >
-                      Play Game
-                    </button>
-                    <button
-                      onClick={() => {
-                        cancelGame(game);
-                      }}
-                      disabled={disableCancelGame(game)}
-                      className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
-                    >
-                      Cancel Game
-                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {/* Games List */}
+              {filteredGames.length === 0 ? (
+                <div className='text-center py-8 text-gray-500'>
+                  No games match your filters
+                </div>
+              ) : (
+                <div className='space-y-4'>
+                  {filteredGames.map((game, index) => (
+                    <div
+                      key={index}
+                      className='bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow'
+                    >
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              BoxName:
+                            </span>
+                            <span className='ml-2 font-mono break-all'>
+                              {game.counter.toString()} - {game.player_1}
+                            </span>
+                          </div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              Player 1:
+                            </span>
+                            <span className='ml-2 font-mono break-all'>
+                              {game.player_1}
+                            </span>
+                            {game.player_1 === activeAddress && (
+                              <span className='ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full'>
+                                You
+                              </span>
+                            )}
+                          </div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              Player 2:
+                            </span>
+                            <span className='ml-2 font-mono break-all'>
+                              {game.player_2}
+                            </span>
+                            {game.player_2 === activeAddress && (
+                              <span className='ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full'>
+                                You
+                              </span>
+                            )}
+                          </div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              Player 1 Round:
+                            </span>
+                            <span className='ml-2 font-mono'>
+                              {game.player_1Round.toString()}
+                            </span>
+                          </div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              Player 2 Round:
+                            </span>
+                            <span className='ml-2 font-mono'>
+                              {game.player_2Round.toString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              VRF Round:
+                            </span>
+                            <span className='ml-2 font-mono'>
+                              {game.vrfRound.toString()}
+                            </span>
+                          </div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              Asset ID:
+                            </span>
+                            <span className='ml-2 font-mono'>
+                              {game.asset.toString() === '0' ? (
+                                <span className='text-green-600 font-medium'>
+                                  Algo
+                                </span>
+                              ) : (
+                                game.asset.toString()
+                              )}
+                            </span>
+                          </div>
+                          <div className='mb-2'>
+                            <span className='text-gray-500 font-medium'>
+                              Asset Amount:
+                            </span>
+                            <span className='ml-2 font-mono'>
+                              {game.assetAmount.toString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className='mt-4 flex justify-end gap-3'>
+                        <button
+                          onClick={() => {
+                            if (game.asset === BigInt(0)) {
+                              joinAlgoGame(game);
+                            } else {
+                              joinAssetGame(game);
+                            }
+                          }}
+                          className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
+                        >
+                          Join Game
+                        </button>
+                        <button
+                          onClick={() => playGame(game)}
+                          className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
+                          disabled={disablePlayGame(game, currentRound)}
+                        >
+                          Play Game
+                        </button>
+                        <button
+                          onClick={() => {
+                            cancelGame(game);
+                          }}
+                          disabled={disableCancelGame(game)}
+                          className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
+                        >
+                          Cancel Game
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Create Game Tab Content */}
+          {activeTab === 'create-game' && (
+            <>
+              <div className='flex items-center justify-between mb-8'>
+                <h1 className='text-3xl font-bold text-gray-800'>
+                  Create New Game
+                </h1>
+              </div>
+
+              <form onSubmit={handleSubmit} className='space-y-6'>
+                <div className='space-y-4'>
+                  <label className='block'>
+                    <span className='text-gray-700 font-medium'>
+                      Select Asset
+                    </span>
+                    <select
+                      value={selectedAsset}
+                      onChange={(e) => setSelectedAsset(e.target.value)}
+                      className='mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 bg-white p-3'
+                    >
+                      {[
+                        { assetId: 0, assetName: 'Algo' },
+                        ...accountAssets,
+                      ].map((asset) => (
+                        <option
+                          key={asset.assetId}
+                          value={Number(asset.assetId)}
+                        >
+                          {asset.assetName} ({asset.assetId})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className='block'>
+                    <span className='text-gray-700 font-medium'>Amount</span>
+                    <div className='mt-1 relative rounded-lg shadow-sm'>
+                      <input
+                        type='number'
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder='Enter amount'
+                        min='0'
+                        step='0.01'
+                        className='block w-full rounded-lg border-gray-300 pr-12 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50 p-3'
+                      />
+                      <div className='absolute inset-y-0 right-0 flex items-center pr-3'>
+                        <span className='text-gray-500 sm:text-sm'>
+                          {selectedAsset}
+                        </span>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div className='pt-4'>
+                  <button
+                    type='submit'
+                    disabled={!amount}
+                    className='w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+                  >
+                    Create Game
+                  </button>
+                </div>
+              </form>
+            </>
           )}
         </div>
       </div>
