@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
@@ -9,14 +10,12 @@ import {
   MinusCircle,
   PlusCircle,
   Wallet,
-  HandCoins,
 } from 'lucide-react';
 import { useWallet } from '@txnlab/use-wallet-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -116,7 +115,8 @@ export default function ConnectMenu() {
     copyAddress(address);
   };
 
-  const network = process.env.NEXT_PUBLIC_ALGOD_NETWORK;
+  const pathName = usePathname();
+  const network = pathName === '/' ? 'testnet' : 'mainnet';
 
   useEffect(() => {
     const handleOpenDropdown = () => setIsOpen(true);
@@ -131,7 +131,7 @@ export default function ConnectMenu() {
       if (!activeAccount?.address) return;
       setIsLoading(true);
       try {
-        const balance = await checkAlgoBalance(activeAccount.address);
+        const balance = await checkAlgoBalance(activeAccount.address, network);
         setAlgoBalance(balance.map((value) => Number(value)));
       } catch (error) {
         console.log('Failed to fetch balance:', error);
@@ -224,24 +224,6 @@ export default function ConnectMenu() {
                 )
               )}
             </div>
-
-            {network === 'testnet' && (
-              <>
-                <div className='flex justify-end'>
-                  <Button asChild variant='outline' size='sm'>
-                    <Link
-                      href='https://bank.testnet.algorand.network/'
-                      target='_blank'
-                      className='flex items-center gap-2'
-                    >
-                      <HandCoins className='h-4 w-4' />
-                      Testnet Dispenser
-                    </Link>
-                  </Button>
-                </div>
-                <DropdownMenuSeparator />
-              </>
-            )}
           </div>
         )}
 

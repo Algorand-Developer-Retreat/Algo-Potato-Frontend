@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { algorandClient } from './algoClient';
+import { algorandClient as testnetClient } from '@/lib/testnetAlgoClient';
+import { algorandClient as mainnetClient } from '@/lib/mainnetAlgoClient';
 import { toast } from '@/hooks/use-toast';
 import Big from 'big.js';
 
@@ -70,8 +71,13 @@ export function capitalizeWords(input: string): string {
 export const unlimitedShares = BigInt('9223372036854775808');
 
 // Algorand related
-export async function checkAlgoBalance(address: string) {
-  const { account } = await algorandClient.client.indexer
+export async function checkAlgoBalance(
+  address: string,
+  network: 'testnet' | 'mainnet'
+) {
+  const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+
+  const { account } = await clientToUse.client.indexer
     .lookupAccountByID(address)
     .do();
   return [account.amount, account['minBalance']];
@@ -95,6 +101,11 @@ export function copyAddress(address: string) {
     }
   );
 }
+
+export const getUSCDAssetId = (network: 'testnet' | 'mainnet') => {
+  return network === 'testnet' ? 10458941 : 31566704;
+};
+
 export const USDC = {
   assetId: activeNetwork === 'testnet' ? 10458941 : 31566704,
   decimals: 6,
@@ -102,9 +113,15 @@ export const USDC = {
   tokenName: 'USDC',
 };
 
-export const isOptedIn = async (address: string, assetId: number) => {
+export const isOptedIn = async (
+  address: string,
+  assetId: number,
+  network: 'testnet' | 'mainnet'
+) => {
+  const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+
   try {
-    const { assets } = await algorandClient.client.indexer
+    const { assets } = await clientToUse.client.indexer
       .lookupAccountAssets(address)
       .assetId(assetId)
       .do();
@@ -181,10 +198,13 @@ export const calculatePricePerToken = (
 export const checkAssetBalance = async (
   address: string,
   assetId: number,
-  assetDecimals: number
+  assetDecimals: number,
+  network: 'testnet' | 'mainnet'
 ) => {
+  const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+
   try {
-    const { balance } = await algorandClient.asset.getAccountInformation(
+    const { balance } = await clientToUse.asset.getAccountInformation(
       address,
       BigInt(assetId)
     );
@@ -193,4 +213,9 @@ export const checkAssetBalance = async (
     console.log('checkAssetBalance error', error);
     return 0;
   }
+};
+
+// Helper function to get the appropriate client
+export const getAlgorandClient = (network: 'testnet' | 'mainnet') => {
+  return network === 'testnet' ? testnetClient : mainnetClient;
 };

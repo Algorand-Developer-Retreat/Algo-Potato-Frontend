@@ -3,10 +3,9 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import ConnectMenu from '../Txn-lab/Connect-menu';
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
-  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
-
   const networkConfig = {
     testnet: {
       name: 'Testnet',
@@ -20,9 +19,8 @@ export default function Navbar() {
     },
   };
 
-  const toggleNetwork = () => {
-    setNetwork((prev) => (prev === 'testnet' ? 'testnet' : 'testnet'));
-  };
+  const pathName = usePathname();
+  const network = pathName === '/' ? 'testnet' : 'mainnet';
 
   return (
     <nav className='sticky top-0 z-50 bg-gradient-to-r from-blue-50 to-blue-100 shadow-lg'>
@@ -31,7 +29,6 @@ export default function Navbar() {
           {/* Network Indicator */}
           <div className='absolute left-4 flex items-center'>
             <button
-              onClick={toggleNetwork}
               className={`
                 ${networkConfig[network].color} 
                 ${networkConfig[network].hoverColor}
