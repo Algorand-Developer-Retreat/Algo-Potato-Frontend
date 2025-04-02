@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import ConnectMenu from '../Txn-lab/Connect-menu';
 import { usePathname } from 'next/navigation';
 
