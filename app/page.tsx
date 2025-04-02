@@ -15,6 +15,7 @@ export default function GameDashboard() {
     playGame,
     createAssetGame,
     joinAssetGame,
+    cancelGame,
   } = useGameMethods();
 
   const { currentRound, getCurrentRound, getAccountAssets, accountAssets } =
@@ -27,7 +28,7 @@ export default function GameDashboard() {
   const [amount, setAmount] = useState('');
   const [selectedAsset, setSelectedAsset] = useState('0');
 
-  const disableGame = (gameState: OpenGameState, currentRound: bigint) => {
+  const disablePlayGame = (gameState: OpenGameState, currentRound: bigint) => {
     if (gameState.vrfRound === BigInt(0)) {
       return true;
     }
@@ -36,6 +37,15 @@ export default function GameDashboard() {
     }
     if (accountAssets.map((asset) => asset.assetId).includes(gameState.asset))
       return gameState.vrfRound + BigInt(15) >= currentRound ? true : false;
+  };
+
+  const disableCancelGame = (gameState: OpenGameState) => {
+    if (gameState.vrfRound !== BigInt(0)) {
+      return true;
+    }
+    if (activeAddress !== gameState.player_1) {
+      return true;
+    }
   };
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
@@ -240,9 +250,18 @@ export default function GameDashboard() {
                     <button
                       onClick={() => playGame(game)}
                       className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
-                      disabled={disableGame(game, currentRound)}
+                      disabled={disablePlayGame(game, currentRound)}
                     >
                       Play Game
+                    </button>
+                    <button
+                      onClick={() => {
+                        cancelGame(game);
+                      }}
+                      disabled={disableCancelGame(game)}
+                      className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
+                    >
+                      Cancel Game
                     </button>
                   </div>
                 </div>
