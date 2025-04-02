@@ -24,10 +24,11 @@ export default function GameDashboard() {
 
   const { activeAddress } = useWallet();
 
-  const appId = process.env.NEXT_PUBLIC_APP_ID;
+  const appId = process.env.NEXT_PUBLIC_TESTNET_APP_ID;
 
   const [amount, setAmount] = useState('');
   const [selectedAsset, setSelectedAsset] = useState('0');
+  // const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet');
 
   // Add active tab state
   const [activeTab, setActiveTab] = useState('open-games');
@@ -68,9 +69,9 @@ export default function GameDashboard() {
     e.preventDefault();
 
     if (selectedAsset === '0') {
-      createGame(Number(amount));
+      createGame(Number(amount), 'testnet');
     } else {
-      createAssetGame(BigInt(selectedAsset), BigInt(amount));
+      createAssetGame(BigInt(selectedAsset), BigInt(amount), 'testnet');
     }
   };
 
@@ -148,12 +149,12 @@ export default function GameDashboard() {
   }, [filters, openGames, activeAddress]);
 
   useEffect(() => {
-    getOpenGames();
-    getCurrentRound(); // Initial fetch
+    getOpenGames('testnet');
+    getCurrentRound('testnet'); // Initial fetch
 
     const intervalId = setInterval(() => {
-      getCurrentRound();
-      getOpenGames();
+      getCurrentRound('testnet');
+      getOpenGames('testnet');
     }, 3000);
 
     // Clean up the interval when the component unmounts
@@ -161,7 +162,7 @@ export default function GameDashboard() {
   }, []);
 
   useEffect(() => {
-    getAccountAssets();
+    getAccountAssets('testnet');
   }, [activeAddress]);
 
   return (
@@ -206,12 +207,6 @@ export default function GameDashboard() {
               <div className='flex justify-between items-center mb-6'>
                 <h2 className='text-2xl font-bold text-gray-800'>Open Games</h2>
                 <div className='flex space-x-2'>
-                  <button
-                    onClick={() => getOpenGames()}
-                    className='flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm mr-2'
-                  >
-                    Refresh Games
-                  </button>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
                     className='flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm'
@@ -435,9 +430,9 @@ export default function GameDashboard() {
                         <button
                           onClick={() => {
                             if (game.asset === BigInt(0)) {
-                              joinAlgoGame(game);
+                              joinAlgoGame(game, 'testnet');
                             } else {
-                              joinAssetGame(game);
+                              joinAssetGame(game, 'testnet');
                             }
                           }}
                           className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
@@ -445,7 +440,7 @@ export default function GameDashboard() {
                           Join Game
                         </button>
                         <button
-                          onClick={() => playGame(game)}
+                          onClick={() => playGame(game, 'testnet')}
                           className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'
                           disabled={disablePlayGame(game, currentRound)}
                         >
@@ -453,7 +448,7 @@ export default function GameDashboard() {
                         </button>
                         <button
                           onClick={() => {
-                            cancelGame(game);
+                            cancelGame(game, 'testnet');
                           }}
                           disabled={disableCancelGame(game)}
                           className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors disabled:opacity-50'

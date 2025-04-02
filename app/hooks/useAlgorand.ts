@@ -1,8 +1,8 @@
 import { useWallet } from '@txnlab/use-wallet-react';
-
 import { useState } from 'react';
 
-import { algorandClient } from '@/lib/algoClient';
+import { algorandClient as testnetClient } from '@/lib/testnetAlgoClient';
+import { algorandClient as mainnetClient } from '@/lib/mainnetAlgoClient';
 
 export type OpenGameState = {
   player_1: string;
@@ -22,9 +22,11 @@ const useAlgorand = () => {
     { unitName?: string; assetName?: string; assetId: bigint }[]
   >([]);
 
-  const getCurrentRound = async () => {
+  const getCurrentRound = async (network: 'testnet' | 'mainnet') => {
+    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+
     try {
-      const syncRound = (await algorandClient.client.algod.status().do())[
+      const syncRound = (await clientToUse.client.algod.status().do())[
         'lastRound'
       ];
       console.log(syncRound);
@@ -35,17 +37,20 @@ const useAlgorand = () => {
       return currentRound;
     }
   };
-  const getAccountAssets = async () => {
+
+  const getAccountAssets = async (network: 'testnet' | 'mainnet') => {
+    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+
     if (activeAddress) {
       const accountAssetsPromise = (
-        await algorandClient.account.getInformation(activeAddress)
+        await clientToUse.account.getInformation(activeAddress)
       ).assets
         ?.filter((asset) => {
           if (asset.amount > 0) {
             return asset;
           }
         })
-        .map((asset) => algorandClient.asset.getById(asset.assetId));
+        .map((asset) => clientToUse.asset.getById(asset.assetId));
 
       const accountAssets = (await Promise.all(accountAssetsPromise!)).map(
         (asset) => {
@@ -59,11 +64,17 @@ const useAlgorand = () => {
       console.log(accountAssets);
     }
   };
+
+  const getAlgorandClient = (network: 'testnet' | 'mainnet') => {
+    return network === 'testnet' ? testnetClient : mainnetClient;
+  };
+
   return {
     currentRound,
     getCurrentRound,
     getAccountAssets,
     accountAssets,
+    getAlgorandClient,
   };
 };
 

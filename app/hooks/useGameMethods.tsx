@@ -5,7 +5,8 @@ import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount';
 import * as algokit from '@algorandfoundation/algokit-utils';
 import { useState } from 'react';
 
-import { algorandClient } from '@/lib/algoClient';
+import { algorandClient as testnetClient } from '@/lib/testnetAlgoClient';
+import { algorandClient as mainnetClient } from '@/lib/mainnetAlgoClient';
 import { AlgoPotatoFactory } from '../../clients/AlgoPotato';
 
 export type OpenGameState = {
@@ -24,51 +25,74 @@ const useGameMethods = () => {
   const [appId, setAppId] = useState<bigint | null>(null);
   const [openGames, setOpenGames] = useState<OpenGameState[]>([]);
 
-  const createAndFund = async () => {
+  const createAndFund = async (network: 'testnet' | 'mainnet') => {
+    console.log('network', network);
+    console.log('hit create');
     const factory = new AlgoPotatoFactory({
-      algorand: algorandClient,
+      algorand: network === 'testnet' ? testnetClient : mainnetClient,
       defaultSender: activeAddress!,
       defaultSigner: transactionSigner,
     });
 
     const { appClient } = await factory.send.create.bare();
 
-    await algorandClient.send.payment({
-      sender: activeAddress!,
-      signer: transactionSigner,
-      receiver: appClient.appAddress,
-      amount: AlgoAmount.Algo(0.1),
-    });
+    if (network === 'testnet') {
+      await testnetClient.send.payment({
+        sender: activeAddress!,
+        signer: transactionSigner,
+        receiver: appClient.appAddress,
+        amount: AlgoAmount.Algo(0.1),
+      });
+    } else {
+      await mainnetClient.send.payment({
+        sender: activeAddress!,
+        signer: transactionSigner,
+        receiver: appClient.appAddress,
+        amount: AlgoAmount.Algo(0.1),
+      });
+    }
+
     setAppId(appClient.appId); // Store the appId for future reference
   };
 
-  const getAppClient = async () => {
+  const getAppClient = async (network: 'testnet' | 'mainnet') => {
     algokit.Config.configure({ populateAppCallResources: true });
 
+    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+
+    console.log('clientToUse', network);
+
     const factory = new AlgoPotatoFactory({
-      algorand: algorandClient,
+      algorand: clientToUse,
       defaultSender: activeAddress!,
       defaultSigner: transactionSigner,
     });
-    const appId = BigInt(process.env.NEXT_PUBLIC_APP_ID!);
+
+    const appIdToUse =
+      network === 'testnet'
+        ? BigInt(process.env.NEXT_PUBLIC_TESTNET_APP_ID!)
+        : BigInt(process.env.NEXT_PUBLIC_MAINNET_APP_ID!);
+
+    console.log('appIdToUse', appIdToUse);
 
     return factory.getAppClientById({
-      appId,
+      appId: appIdToUse,
     });
   };
 
-  const createGame = async (amount: number) => {
-    const algoPotatoClient = await getAppClient();
+  const createGame = async (amount: number, network: 'testnet' | 'mainnet') => {
+    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+    const algoPotatoClient = await getAppClient(network);
     const appAddress = algoPotatoClient.appAddress;
 
-    const assetDeposit = await algorandClient.createTransaction.payment({
+    const assetDeposit = await clientToUse.createTransaction.payment({
       sender: activeAddress!,
       signer: transactionSigner,
       receiver: appAddress,
       amount: AlgoAmount.MicroAlgo(amount),
     });
 
-    const mbrFee = algorandClient.createTransaction.payment({
+    const mbrFee = clientToUse.createTransaction.payment({
       sender: activeAddress!,
       signer: transactionSigner,
       receiver: appAddress,
@@ -90,11 +114,15 @@ const useGameMethods = () => {
     console.log(`ABI Results: ${abiResults}`);
   };
 
-  const joinAlgoGame = async (openGameState: OpenGameState) => {
-    const algoPotatoClient = await getAppClient();
+  const joinAlgoGame = async (
+    openGameState: OpenGameState,
+    network: 'testnet' | 'mainnet'
+  ) => {
+    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+    const algoPotatoClient = await getAppClient(network);
     const appAddress = algoPotatoClient.appAddress;
 
-    const assetDeposit = algorandClient.createTransaction.payment({
+    const assetDeposit = clientToUse.createTransaction.payment({
       sender: activeAddress!,
       signer: transactionSigner,
       receiver: appAddress,
@@ -117,11 +145,15 @@ const useGameMethods = () => {
     console.table({ primeTxResults, primeTxIds });
   };
 
-  const joinAssetGame = async (openGameState: OpenGameState) => {
-    const algoPotatoClient = await getAppClient();
+  const joinAssetGame = async (
+    openGameState: OpenGameState,
+    network: 'testnet' | 'mainnet'
+  ) => {
+    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+    const algoPotatoClient = await getAppClient(network);
     const appAddress = algoPotatoClient.appAddress;
 
-    const assetDeposit = algorandClient.createTransaction.assetTransfer({
+    const assetDeposit = clientToUse.createTransaction.assetTransfer({
       sender: activeAddress!,
       signer: transactionSigner,
       receiver: appAddress,
@@ -143,8 +175,11 @@ const useGameMethods = () => {
     console.table({ primeTxResults, primeTxIds });
   };
 
-  const playGame = async (openGameState: OpenGameState) => {
-    const algoPotatoClient = await getAppClient();
+  const playGame = async (
+    openGameState: OpenGameState,
+    network: 'testnet' | 'mainnet'
+  ) => {
+    const algoPotatoClient = await getAppClient(network);
     const playTxnResponse = await algoPotatoClient.send.playGame({
       args: {
         gameBoxName: {
@@ -163,12 +198,17 @@ const useGameMethods = () => {
     console.table({ playTxIds, playTxResults });
   };
 
-  const createAssetGame = async (assetId: bigint, amount: bigint) => {
-    const algoPotatoClient = await getAppClient();
+  const createAssetGame = async (
+    assetId: bigint,
+    amount: bigint,
+    network: 'testnet' | 'mainnet'
+  ) => {
+    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
+    const algoPotatoClient = await getAppClient(network);
 
     const appAddress = algoPotatoClient.appAddress;
 
-    const assetDeposit = algorandClient.createTransaction.assetTransfer({
+    const assetDeposit = clientToUse.createTransaction.assetTransfer({
       sender: activeAddress!,
       signer: transactionSigner,
       receiver: appAddress,
@@ -176,7 +216,7 @@ const useGameMethods = () => {
       amount,
     });
 
-    const mbrFee = algorandClient.createTransaction.payment({
+    const mbrFee = clientToUse.createTransaction.payment({
       sender: activeAddress!,
       signer: transactionSigner,
       receiver: appAddress,
@@ -187,7 +227,7 @@ const useGameMethods = () => {
 
     let contractOptedIntoAsset = true;
 
-    const accountInformation = await algorandClient.client.algod
+    const accountInformation = await clientToUse.client.algod
       .accountAssetInformation(appAddress, Number(assetId))
       .do()
       .catch(() => (contractOptedIntoAsset = false));
@@ -197,7 +237,7 @@ const useGameMethods = () => {
     console.log(contractOptedIntoAsset);
 
     if (!contractOptedIntoAsset) {
-      const optInFee = algorandClient.createTransaction.payment({
+      const optInFee = clientToUse.createTransaction.payment({
         sender: activeAddress!,
         signer: transactionSigner,
         receiver: appAddress,
@@ -229,8 +269,11 @@ const useGameMethods = () => {
     console.log(`ABI Results: ${abiResults[0]}`);
   };
 
-  const cancelGame = async (openGameState: OpenGameState) => {
-    const algoPotatoClient = await getAppClient();
+  const cancelGame = async (
+    openGameState: OpenGameState,
+    network: 'testnet' | 'mainnet'
+  ) => {
+    const algoPotatoClient = await getAppClient(network);
 
     const txnResponse = await algoPotatoClient.send.cancelGame({
       args: {
@@ -250,8 +293,8 @@ const useGameMethods = () => {
     console.table({ txnIds, abiResult });
   };
 
-  const getOpenGames = async () => {
-    const algoPotatoClient = await getAppClient();
+  const getOpenGames = async (network: 'testnet' | 'mainnet') => {
+    const algoPotatoClient = await getAppClient(network);
     const _openGames: OpenGameState[] = [];
 
     (await algoPotatoClient.state.box.gameBox.getMap()).forEach(
