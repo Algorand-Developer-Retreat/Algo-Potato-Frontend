@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Algopotato',
-  description: 'A battleground for testing Psuedorandomness on Algorand',
+  description: 'A hot potato game for Algorand',
 };
 
 export default function RootLayout({
