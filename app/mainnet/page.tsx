@@ -9,7 +9,6 @@ import { Filter, Search, X } from 'lucide-react';
 import RoundInfo from '../components/ui/round-info';
 export default function GameDashboard() {
   const {
-    createAndFund,
     createGame,
     openGames,
     getOpenGames,
