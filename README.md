@@ -4,13 +4,6 @@ AlgoPotato is a community-driven, non-commercial decentralized game built on Alg
 
 For a more detailed explanation of the game mechanics please refer to the [Smart Contract repo](https://github.com/atsoc1993/Hot-Potato-Contract-AVM)
 
-## Current State
-
-- Testnet only
-- No cancel game
-- No disabling of 'play game' button 15 rounds after the vrf round
-- Asset game hooks are implemented but not yet integrated with frontend
-
 ## Getting Started
 
 You can visit the [Testnet deployment](https://algo-potato-frontend.vercel.app/) to play the game or you can run the front end locally by doing the following.
