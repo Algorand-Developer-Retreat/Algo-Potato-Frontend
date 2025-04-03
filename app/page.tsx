@@ -65,6 +65,21 @@ export default function GameDashboard() {
     }
   };
 
+  const disableJoinGame = (gameState: OpenGameState) => {
+    if (gameState.vrfRound !== BigInt(0)) {
+      return true;
+    }
+    if (activeAddress === gameState.player_1) {
+      return true;
+    }
+    if (
+      gameState.player_2 !==
+      'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ'
+    ) {
+      return true;
+    }
+  };
+
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
@@ -435,7 +450,8 @@ export default function GameDashboard() {
                               joinAssetGame(game, 'testnet');
                             }
                           }}
-                          className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors'
+                          className='px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-colors  disabled:opacity-50'
+                          disabled={disableJoinGame(game)}
                         >
                           Join Game
                         </button>
