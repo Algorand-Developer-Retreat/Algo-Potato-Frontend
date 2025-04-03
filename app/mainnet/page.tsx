@@ -187,8 +187,6 @@ export default function GameDashboard() {
         <RoundInfo appId={appId!} currentRound={currentRound} />
       </div>
 
-      <button onClick={() => createAndFund('mainnet')}>Create</button>
-
       {/* Tab Navigation */}
       <div className='bg-gradient-to-b from-blue-100 to-purple-100 rounded-t-3xl shadow-xl overflow-hidden mb-px'>
         <div className='flex border-b border-gray-200'>

@@ -3,25 +3,23 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className='mt-auto py-6 bg-gradient-to-r from-gray-800 to-gray-900 text-white'>
+    <footer className='mt-auto py-6 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800'>
       <div className='container mx-auto px-4'>
         <div className='flex flex-col md:flex-row justify-between items-center'>
           <div className='mb-4 md:mb-0'>
-            <p className='text-gray-300 text-sm'>
-              © {new Date().getFullYear()} AlgoPotato
+            <p className='text-gray-700 text-sm'>
+              © {new Date().getFullYear()} Algorand Developer Retreat
             </p>
           </div>
 
           <div className='flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-6 text-center md:text-right'>
             <div className='flex items-center space-x-2'>
-              <span className='text-gray-300 text-sm'>
-                Frontend by Eric Sharma
-              </span>
+              <span className='text-gray-700 text-sm'>Frontend</span>
               <Link
-                href='https://github.com/ericsharma/Algo-Potato-Frontend'
+                href='https://github.com/Algorand-Developer-Retreat/Algo-Potato-Frontend'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='text-blue-400 hover:text-blue-300 transition-colors'
+                className='text-blue-600 hover:text-blue-800 transition-colors'
               >
                 <svg
                   xmlns='http://www.w3.org/2000/svg'
@@ -41,14 +39,12 @@ export default function Footer() {
             </div>
 
             <div className='flex items-center space-x-2'>
-              <span className='text-gray-300 text-sm'>
-                Smart Contracts by Leo
-              </span>
+              <span className='text-black text-sm'>Smart Contracts</span>
               <Link
                 href='https://github.com/atsoc1993/Hot-Potato-Contract-AVM'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='text-blue-400 hover:text-blue-300 transition-colors'
+                className='text-blue-600 hover:text-blue-800 transition-colors'
               >
                 <svg
                   xmlns='http://www.w3.org/2000/svg'
