@@ -7,7 +7,8 @@ import { useState } from 'react';
 
 import { algorandClient as testnetClient } from '@/lib/testnetAlgoClient';
 import { algorandClient as mainnetClient } from '@/lib/mainnetAlgoClient';
-import { AlgoPotatoFactory } from '../../clients/AlgoPotato';
+import { AlgoPotatoFactory as TestnetAlgoPotatoFactory } from '../../clients/testnet/AlgoPotato';
+import { AlgoPotatoFactory } from '../../clients/mainnet/AlgoPotato';
 
 export type OpenGameState = {
   player_1: string;
@@ -28,11 +29,18 @@ const useGameMethods = () => {
   const createAndFund = async (network: 'testnet' | 'mainnet') => {
     console.log('network', network);
     console.log('hit create');
-    const factory = new AlgoPotatoFactory({
-      algorand: network === 'testnet' ? testnetClient : mainnetClient,
-      defaultSender: activeAddress!,
-      defaultSigner: transactionSigner,
-    });
+    const factory =
+      network === 'testnet'
+        ? new TestnetAlgoPotatoFactory({
+            algorand: testnetClient,
+            defaultSender: activeAddress!,
+            defaultSigner: transactionSigner,
+          })
+        : new AlgoPotatoFactory({
+            algorand: mainnetClient,
+            defaultSender: activeAddress!,
+            defaultSigner: transactionSigner,
+          });
 
     const { appClient } = await factory.send.create.bare();
 
@@ -58,16 +66,20 @@ const useGameMethods = () => {
   const getAppClient = async (network: 'testnet' | 'mainnet') => {
     algokit.Config.configure({ populateAppCallResources: true });
 
-    const clientToUse = network === 'testnet' ? testnetClient : mainnetClient;
-
     console.log('clientToUse', network);
 
-    const factory = new AlgoPotatoFactory({
-      algorand: clientToUse,
-      defaultSender: activeAddress!,
-      defaultSigner: transactionSigner,
-    });
-
+    const factory =
+      network === 'testnet'
+        ? new TestnetAlgoPotatoFactory({
+            algorand: testnetClient,
+            defaultSender: activeAddress!,
+            defaultSigner: transactionSigner,
+          })
+        : new AlgoPotatoFactory({
+            algorand: mainnetClient,
+            defaultSender: activeAddress!,
+            defaultSigner: transactionSigner,
+          });
     const appIdToUse =
       network === 'testnet'
         ? BigInt(process.env.NEXT_PUBLIC_TESTNET_APP_ID!)
